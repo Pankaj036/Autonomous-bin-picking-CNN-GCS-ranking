@@ -1,0 +1,286 @@
+<?xml version="1.0"?>
+<!--
+  Robotiq 3-Finger Adaptive Gripper (S-Model)
+  Built from the official Robotiq visualization meshes.
+
+  Finger naming (matches Python driver /joint_states):
+    finger_1  (A) — left  finger  (scissor revolute: palm_finger_1_joint)
+    finger_2  (B) — right finger  (scissor revolute: palm_finger_2_joint)
+    finger_3  (C) — middle/thumb  (scissor fixed:    palm_finger_3_joint)
+
+  Each finger has 4 links (link_0 … link_3) and 3 actuated joints (joint_1/2/3).
+  The scissor joints (palm_finger_1/2_joint) are fixed at resting position
+  because the standalone Modbus driver does not command scissor motion.
+
+  Active joint for MoveIt:
+    finger_1_joint_1  (0.0495 … 1.2218 rad)
+
+  Mimic joints (follow finger_1_joint_1 via URDF <mimic>):
+    finger_1_joint_2, finger_1_joint_3
+    finger_2_joint_1, finger_2_joint_2, finger_2_joint_3
+    finger_3_joint_1, finger_3_joint_2, finger_3_joint_3
+
+  On real hardware the Python driver publishes all 9 joints explicitly, so
+  robot_state_publisher uses those values; the mimic tags only affect the
+  MoveIt planning preview before execution.
+-->
+<robot xmlns:xacro="http://wiki.ros.org/xacro" name="robotiq_3f_gripper">
+
+  <!-- ── ros2_control (sim / fake-hardware only) ──────────────────── -->
+  <xacro:include filename="$(find ur_yt_sim)/urdf/robotiq_3f_gripper.ros2_control.xacro"/>
+
+  <!-- ════════════════════════════════════════════════════════════════
+       Finger helper macro  (mirrors reference finger articulated macro)
+       Creates link_0/1/2/3 and joint_1/2/3 for one finger.
+       prefix  e.g. "finger_1_"  →  finger_1_link_0, finger_1_joint_1 …
+       ════════════════════════════════════════════════════════════════ -->
+  <xacro:macro name="r3f_finger" params="prefix mimic_joint">
+
+    <!-- link_0  (knuckle / proximal phalanx base) -->
+    <link name="${prefix}link_0">
+      <visual>
+        <origin xyz="0.020 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="package://ur_yt_sim/meshes/robotiq_3f_gripper/visual/link_0.dae"/>
+        </geometry>
+        <material name="r3f_grey"><color rgba="0.2 0.2 0.2 1"/></material>
+      </visual>
+      <collision>
+        <origin xyz="0.020 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="package://ur_yt_sim/meshes/robotiq_3f_gripper/collision/link_0.STL"/>
+        </geometry>
+      </collision>
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <mass value="0.05"/>
+        <inertia ixx="0.01"   ixy="-0.00002" ixz="0.00001"
+                 iyy="0.0008" iyz="0"        izz="0.001"/>
+      </inertial>
+    </link>
+
+    <!-- link_1  (proximal phalanx) -->
+    <link name="${prefix}link_1">
+      <visual>
+        <origin xyz="0.050 -0.028 0" rpy="0 0 -0.52"/>
+        <geometry>
+          <mesh filename="package://ur_yt_sim/meshes/robotiq_3f_gripper/visual/link_1.dae"/>
+        </geometry>
+        <material name="r3f_grey"/>
+      </visual>
+      <collision>
+        <origin xyz="0.050 -0.028 0" rpy="0 0 -0.52"/>
+        <geometry>
+          <mesh filename="package://ur_yt_sim/meshes/robotiq_3f_gripper/collision/link_1.STL"/>
+        </geometry>
+      </collision>
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <mass value="0.15"/>
+        <!-- Fixed: original ixx=0.001859 violated triangle inequality (ixx+izz < iyy).
+             New values satisfy ixx+izz >= iyy: 0.011+0.004 = 0.015 >= 0.013. -->
+        <inertia ixx="0.0110" ixy="0.0" ixz="0.0"
+                 iyy="0.0130" iyz="0.0" izz="0.0040"/>
+      </inertial>
+    </link>
+
+    <!-- link_2  (medial phalanx) -->
+    <link name="${prefix}link_2">
+      <visual>
+        <origin xyz="0.039 0 0.0075" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="package://ur_yt_sim/meshes/robotiq_3f_gripper/visual/link_2.dae"/>
+        </geometry>
+        <material name="r3f_grey"/>
+      </visual>
+      <collision>
+        <origin xyz="0.039 0 0.0075" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="package://ur_yt_sim/meshes/robotiq_3f_gripper/collision/link_2.STL"/>
+        </geometry>
+      </collision>
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <mass value="0.15"/>
+        <!-- Fixed: same unrealistic inertia as link_1 — same correction applied. -->
+        <inertia ixx="0.0110" ixy="0.0" ixz="0.0"
+                 iyy="0.0130" iyz="0.0" izz="0.0040"/>
+      </inertial>
+    </link>
+
+    <!-- link_3  (distal phalanx / fingertip) -->
+    <link name="${prefix}link_3">
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0.52"/>
+        <geometry>
+          <mesh filename="package://ur_yt_sim/meshes/robotiq_3f_gripper/visual/link_3.dae"/>
+        </geometry>
+        <material name="r3f_grey"/>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0.52"/>
+        <geometry>
+          <mesh filename="package://ur_yt_sim/meshes/robotiq_3f_gripper/collision/link_3.STL"/>
+        </geometry>
+      </collision>
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <mass value="0.05"/>
+        <inertia ixx="0.001239" ixy="-0.000251" ixz="0.000019"
+                 iyy="0.00085"  iyz="0"          izz="0.001632"/>
+      </inertial>
+    </link>
+
+    <!-- joint_1  link_0 → link_1  (primary, actuated / mimic)
+         lower=0.0  so initial_value=0.0 is the valid fully-open position. -->
+    <joint name="${prefix}joint_1" type="revolute">
+      <parent link="${prefix}link_0"/>
+      <child  link="${prefix}link_1"/>
+      <axis xyz="0 0 1"/>
+      <origin xyz="0.020 0 0" rpy="0 0 0"/>
+      <limit lower="0.0" upper="1.2218" effort="100" velocity="100"/>
+      <dynamics damping="0.05" friction="0.02"/>
+      <xacro:unless value="${mimic_joint == ''}">
+        <mimic joint="${mimic_joint}" multiplier="1.0" offset="0"/>
+      </xacro:unless>
+    </joint>
+
+    <!-- joint_2  link_1 → link_2  mimic × 0.714
+         range [0, 0.872] when joint_1 ∈ [0, 1.2218] -->
+    <joint name="${prefix}joint_2" type="revolute">
+      <parent link="${prefix}link_1"/>
+      <child  link="${prefix}link_2"/>
+      <axis xyz="0 0 1"/>
+      <origin xyz="0.050 -0.028 0" rpy="0 0 -0.52"/>
+      <limit lower="0.0" upper="1.5708" effort="100" velocity="100"/>
+      <dynamics damping="0.05" friction="0.02"/>
+      <mimic joint="finger_1_joint_1" multiplier="0.714" offset="0"/>
+    </joint>
+
+    <!-- joint_3  link_2 → link_3  mimic × 0.393
+         range [0, 0.48] when joint_1 ∈ [0, 1.2218]
+         Limits widened to [0, 0.6] so all mimic values stay in-bounds.
+         (Original reference had negative limits for the physical linkage direction
+          which conflicts with the +0.393 multiplier used here.) -->
+    <joint name="${prefix}joint_3" type="revolute">
+      <parent link="${prefix}link_2"/>
+      <child  link="${prefix}link_3"/>
+      <axis xyz="0 0 1"/>
+      <origin xyz="0.039 0 0" rpy="0 0 0"/>
+      <limit lower="0.0" upper="0.6" effort="100" velocity="100"/>
+      <dynamics damping="0.05" friction="0.02"/>
+      <mimic joint="finger_1_joint_1" multiplier="0.393" offset="0"/>
+    </joint>
+
+  </xacro:macro>
+
+  <!-- ════════════════════════════════════════════════════════════════
+       Main gripper macro
+       ════════════════════════════════════════════════════════════════ -->
+  <xacro:macro name="robotiq_3f_gripper"
+               params="name prefix parent *origin
+                       sim_gazebo:=false
+                       sim_ignition:=false
+                       use_fake_hardware:=false
+                       mock_sensor_commands:=false
+                       include_ros2_control:=true">
+
+    <material name="r3f_grey"><color rgba="0.2 0.2 0.2 1"/></material>
+
+    <!-- ── ros2_control (omitted for real hardware — see .ros2_control.xacro) -->
+    <xacro:if value="${include_ros2_control}">
+      <xacro:robotiq_3f_gripper_ros2_control
+        name="${name}" prefix="${prefix}"
+        sim_gazebo="${sim_gazebo}"
+        sim_ignition="${sim_ignition}"
+        use_fake_hardware="${use_fake_hardware}"
+        mock_sensor_commands="${mock_sensor_commands}"/>
+    </xacro:if>
+
+    <!-- ── Palm ─────────────────────────────────────────────────── -->
+    <link name="${prefix}robotiq_3f_palm">
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="package://ur_yt_sim/meshes/robotiq_3f_gripper/visual/palm.dae"/>
+        </geometry>
+        <material name="r3f_grey"/>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="package://ur_yt_sim/meshes/robotiq_3f_gripper/collision/palm.STL"/>
+        </geometry>
+      </collision>
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <mass value="1.3"/>
+        <inertia ixx="0.006012" ixy="0.000079" ixz="-0.00024"
+                 iyy="0.012892" iyz="0"         izz="0.002435"/>
+      </inertial>
+    </link>
+
+    <!-- palm → parent (tool0) fixed joint -->
+    <joint name="${prefix}robotiq_3f_palm_joint" type="fixed">
+      <parent link="${parent}"/>
+      <child  link="${prefix}robotiq_3f_palm"/>
+      <xacro:insert_block name="origin"/>
+    </joint>
+
+    <!-- ── Finger 1 (A) ─────────────────────────────────────────── -->
+    <!-- Scissor joint: fixed at resting position (driver does not control scissor) -->
+    <joint name="${prefix}palm_finger_1_joint" type="fixed">
+      <parent link="${prefix}robotiq_3f_palm"/>
+      <child  link="${prefix}finger_1_link_0"/>
+      <origin xyz="-0.0455 0.0214 0.036" rpy="0 3.1416 -1.57"/>
+    </joint>
+    <!-- Finger 1 links + joints (joint_1 is the ACTIVE joint for MoveIt) -->
+    <xacro:r3f_finger prefix="${prefix}finger_1_" mimic_joint=""/>
+
+    <!-- ── Finger 2 (B) ─────────────────────────────────────────── -->
+    <joint name="${prefix}palm_finger_2_joint" type="fixed">
+      <parent link="${prefix}robotiq_3f_palm"/>
+      <child  link="${prefix}finger_2_link_0"/>
+      <origin xyz="-0.0455 0.0214 -0.036" rpy="0 3.1416 -1.57"/>
+    </joint>
+    <!-- Finger 2 links + joints (joint_1 mimics finger_1_joint_1) -->
+    <xacro:r3f_finger prefix="${prefix}finger_2_" mimic_joint="finger_1_joint_1"/>
+
+    <!-- ── Finger 3 / middle (C) ────────────────────────────────── -->
+    <joint name="${prefix}palm_finger_3_joint" type="fixed">
+      <parent link="${prefix}robotiq_3f_palm"/>
+      <child  link="${prefix}finger_3_link_0"/>
+      <origin xyz="0.0455 0.0214 0" rpy="0 0 1.57"/>
+    </joint>
+    <!-- Finger 3 links + joints (joint_1 mimics finger_1_joint_1) -->
+    <xacro:r3f_finger prefix="${prefix}finger_3_" mimic_joint="finger_1_joint_1"/>
+
+    <!-- ── Gazebo colours ───────────────────────────────────────── -->
+    <gazebo reference="${prefix}robotiq_3f_palm">
+      <material>Gazebo/DarkGrey</material>
+    </gazebo>
+    <gazebo reference="${prefix}finger_1_link_0"><material>Gazebo/Grey</material></gazebo>
+    <gazebo reference="${prefix}finger_1_link_1"><material>Gazebo/Grey</material></gazebo>
+    <gazebo reference="${prefix}finger_1_link_2"><material>Gazebo/Grey</material></gazebo>
+    <gazebo reference="${prefix}finger_1_link_3">
+      <material>Gazebo/Black</material><kp>100000.0</kp><kd>1.0</kd>
+      <mu1>2.0</mu1><mu2>2.0</mu2><minDepth>0.001</minDepth>
+    </gazebo>
+    <gazebo reference="${prefix}finger_2_link_0"><material>Gazebo/Grey</material></gazebo>
+    <gazebo reference="${prefix}finger_2_link_1"><material>Gazebo/Grey</material></gazebo>
+    <gazebo reference="${prefix}finger_2_link_2"><material>Gazebo/Grey</material></gazebo>
+    <gazebo reference="${prefix}finger_2_link_3">
+      <material>Gazebo/Black</material><kp>100000.0</kp><kd>1.0</kd>
+      <mu1>2.0</mu1><mu2>2.0</mu2><minDepth>0.001</minDepth>
+    </gazebo>
+    <gazebo reference="${prefix}finger_3_link_0"><material>Gazebo/DarkGrey</material></gazebo>
+    <gazebo reference="${prefix}finger_3_link_1"><material>Gazebo/DarkGrey</material></gazebo>
+    <gazebo reference="${prefix}finger_3_link_2"><material>Gazebo/DarkGrey</material></gazebo>
+    <gazebo reference="${prefix}finger_3_link_3">
+      <material>Gazebo/Black</material><kp>100000.0</kp><kd>1.0</kd>
+      <mu1>2.0</mu1><mu2>2.0</mu2><minDepth>0.001</minDepth>
+    </gazebo>
+
+  </xacro:macro>
+
+</robot>

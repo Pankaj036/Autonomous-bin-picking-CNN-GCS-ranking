@@ -1,1 +1,2 @@
-# Autonomous-bin-picking-CNN-GCS ranking
+# ur_10arm_sim
+# ur_10arm_sim

@@ -1,0 +1,48 @@
+# ur10_controllers_fake.yaml
+# Fake (mock_components) hardware for offline RViz / gripper testing.
+# Arm uses joint_trajectory_controller; gripper uses gripper_action_controller.
+
+controller_manager:
+  ros__parameters:
+    update_rate: 100
+
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+    joint_trajectory_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+
+    gripper_action_controller:
+      type: gripper_action_controller/GripperActionController
+
+
+joint_trajectory_controller:
+  ros__parameters:
+    joints:
+      - shoulder_pan_joint
+      - shoulder_lift_joint
+      - elbow_joint
+      - wrist_1_joint
+      - wrist_2_joint
+      - wrist_3_joint
+    command_interfaces:
+      - position
+    state_interfaces:
+      - position
+      - velocity
+    state_publish_rate: 100.0
+    action_monitor_rate: 20.0
+    allow_partial_joints_goal: false
+    constraints:
+      stopped_velocity_tolerance: 0.2
+      goal_time: 0.0
+
+
+gripper_action_controller:
+  ros__parameters:
+    joint: finger_1_joint_1
+    goal_tolerance: 0.01
+    max_effort: 100.0
+    stall_velocity_threshold: 0.001
+    stall_timeout: 1.0
+    allow_stalling: true

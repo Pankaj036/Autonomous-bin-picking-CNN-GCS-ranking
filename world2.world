@@ -1,0 +1,229 @@
+<sdf version='1.7'>
+  <world name='default'>
+    <light name='sun' type='directional'>
+      <cast_shadows>1</cast_shadows>
+      <pose>0 0 10 0 -0 0</pose>
+      <diffuse>0.8 0.8 0.8 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <attenuation>
+        <range>1000</range>
+        <constant>0.9</constant>
+        <linear>0.01</linear>
+        <quadratic>0.001</quadratic>
+      </attenuation>
+      <direction>-0.5 0.1 -0.9</direction>
+      <spot>
+        <inner_angle>0</inner_angle>
+        <outer_angle>0</outer_angle>
+        <falloff>0</falloff>
+      </spot>
+    </light>
+
+    <!-- ── Ground plane ─────────────────────────────────────────────────── -->
+    <model name='ground_plane'>
+      <static>1</static>
+      <link name='link'>
+        <collision name='collision'>
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>100 100</size>
+            </plane>
+          </geometry>
+          <surface>
+            <friction>
+              <ode>
+                <mu>100</mu>
+                <mu2>50</mu2>
+              </ode>
+            </friction>
+            <contact><ode/></contact>
+            <bounce/>
+          </surface>
+          <max_contacts>10</max_contacts>
+        </collision>
+        <visual name='visual'>
+          <cast_shadows>0</cast_shadows>
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>100 100</size>
+            </plane>
+          </geometry>
+          <material>
+            <script>
+              <uri>file://media/materials/scripts/gazebo.material</uri>
+              <n>Gazebo/Grey</n>
+            </script>
+          </material>
+        </visual>
+        <self_collide>0</self_collide>
+        <kinematic>0</kinematic>
+      </link>
+    </model>
+
+    <!-- ── Robot pedestal: 5 cm tall cylinder stand ──────────────────────── -->
+    <model name='robot_pedestal'>
+      <static>1</static>
+      <pose>0 0 0.025 0 0 0</pose>
+      <link name='link'>
+        <collision name='collision'>
+          <geometry>
+            <cylinder><radius>0.15</radius><length>0.05</length></cylinder>
+          </geometry>
+        </collision>
+        <visual name='visual'>
+          <geometry>
+            <cylinder><radius>0.15</radius><length>0.05</length></cylinder>
+          </geometry>
+          <material>
+            <ambient>0.25 0.25 0.25 1</ambient>
+            <diffuse>0.25 0.25 0.25 1</diffuse>
+            <specular>0.01 0.01 0.01 1</specular>
+          </material>
+        </visual>
+        <self_collide>0</self_collide>
+        <kinematic>0</kinematic>
+      </link>
+    </model>
+
+    <!-- ── Tray 1 — Pick bin (light brown, 68×45×12 cm) ────────────────────
+         Centre: (0.55, 0.0, 0.06). Floor on ground plane.
+         Represented as a solid tray for Gazebo visual.
+         MoveIt uses open-top collision objects from ur10_workspace_scene.py. -->
+    <model name='tray_pick'>
+      <static>1</static>
+      <pose>0.55 0.0 0.06 0 0 0</pose>
+      <link name='link'>
+        <collision name='collision'>
+          <geometry>
+            <box><size>0.68 0.45 0.12</size></box>
+          </geometry>
+        </collision>
+        <visual name='visual'>
+          <geometry>
+            <box><size>0.68 0.45 0.12</size></box>
+          </geometry>
+          <material>
+            <!-- Light brown: RGB(0.76, 0.60, 0.42) -->
+            <ambient>0.76 0.60 0.42 1</ambient>
+            <diffuse>0.76 0.60 0.42 1</diffuse>
+            <specular>0.05 0.04 0.03 1</specular>
+            <emissive>0 0 0 1</emissive>
+          </material>
+        </visual>
+        <self_collide>0</self_collide>
+        <kinematic>0</kinematic>
+      </link>
+    </model>
+
+    <!-- ── Tray 2 — Place bin (yellow, 32×45×12 cm) ─────────────────────────
+         Centre: (0.55, 0.60, 0.06). Floor on ground plane. -->
+    <model name='tray_place'>
+      <static>1</static>
+      <pose>0.55 0.60 0.06 0 0 0</pose>
+      <link name='link'>
+        <collision name='collision'>
+          <geometry>
+            <box><size>0.32 0.45 0.12</size></box>
+          </geometry>
+        </collision>
+        <visual name='visual'>
+          <geometry>
+            <box><size>0.32 0.45 0.12</size></box>
+          </geometry>
+          <material>
+            <!-- Yellow: RGB(1.0, 0.95, 0.0) -->
+            <ambient>1.0 0.95 0.0 1</ambient>
+            <diffuse>1.0 0.95 0.0 1</diffuse>
+            <specular>0.05 0.05 0.0 1</specular>
+            <emissive>0 0 0 1</emissive>
+          </material>
+        </visual>
+        <self_collide>0</self_collide>
+        <kinematic>0</kinematic>
+      </link>
+    </model>
+
+    <!-- ── Sample object for testing (small green cube inside pick tray) ───── -->
+    <model name='cube_pick'>
+      <link name='link_1'>
+        <inertial>
+          <mass>0.1</mass>
+          <inertia>
+            <ixx>0.000016667</ixx><ixy>0</ixy><ixz>0</ixz>
+            <iyy>0.000016667</iyy><iyz>0</iyz>
+            <izz>0.000016667</izz>
+          </inertia>
+          <pose>0 0 0 0 0 0</pose>
+        </inertial>
+        <pose>0 0 0 0 0 0</pose>
+        <gravity>1</gravity>
+        <self_collide>0</self_collide>
+        <kinematic>0</kinematic>
+        <visual name='visual'>
+          <pose>0 0 0 0 0 0</pose>
+          <geometry>
+            <box><size>0.05 0.05 0.05</size></box>
+          </geometry>
+          <material>
+            <ambient>0 0.8 0 1</ambient>
+            <diffuse>0 0.8 0 1</diffuse>
+            <specular>0.01 0.01 0.01 1</specular>
+            <emissive>0 0 0 1</emissive>
+          </material>
+          <transparency>0</transparency>
+          <cast_shadows>1</cast_shadows>
+        </visual>
+        <collision name='collision'>
+          <pose>0 0 0 0 0 0</pose>
+          <geometry>
+            <box><size>0.05 0.05 0.05</size></box>
+          </geometry>
+          <surface>
+            <friction>
+              <ode><mu>1</mu><mu2>1</mu2></ode>
+            </friction>
+            <contact><ode/></contact>
+          </surface>
+        </collision>
+      </link>
+      <static>0</static>
+      <!-- Place cube on tray_pick floor: tray bottom = 0.0, cube half = 0.025 -->
+      <pose>0.55 0.0 0.025 0 0 0</pose>
+    </model>
+
+    <gravity>0 0 -9.8</gravity>
+    <magnetic_field>6e-06 2.3e-05 -4.2e-05</magnetic_field>
+    <atmosphere type='adiabatic'/>
+    <physics type='ode'>
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1</real_time_factor>
+      <real_time_update_rate>1000</real_time_update_rate>
+    </physics>
+    <scene>
+      <ambient>0.4 0.4 0.4 1</ambient>
+      <background>0.7 0.7 0.7 1</background>
+      <shadows>1</shadows>
+    </scene>
+    <audio><device>default</device></audio>
+    <wind/>
+    <spherical_coordinates>
+      <surface_model>EARTH_WGS84</surface_model>
+      <latitude_deg>0</latitude_deg>
+      <longitude_deg>0</longitude_deg>
+      <elevation>0</elevation>
+      <heading_deg>0</heading_deg>
+    </spherical_coordinates>
+
+    <gui fullscreen='0'>
+      <!-- Camera positioned to give a clear view of the robot and trays -->
+      <camera name='user_camera'>
+        <pose>2.5 -2.0 2.0 0 0.45 2.3</pose>
+        <view_controller>orbit</view_controller>
+        <projection_type>perspective</projection_type>
+      </camera>
+    </gui>
+    <plugin name="gazebo_link_attacher" filename="libgazebo_link_attacher.so"/>
+  </world>
+</sdf>

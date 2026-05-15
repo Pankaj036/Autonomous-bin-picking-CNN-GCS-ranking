@@ -1,0 +1,110 @@
+# =============================================================================
+#  ur10_safety_config.yaml
+#  UR10 Safety Configuration — Bin-Picking Workspace (CAS-GCS)
+#  =============================================================================
+#
+#  Robot   : UR10 CB3  (IP 192.168.1.102, Polyscope 3.15.8)
+#  Gripper : Schunk WSG  (length=0.18 m, max_opening=0.15 m)
+#  Cameras : 2x OAK-D (overhead + wrist)
+#
+#  Coordinate frame: robot base = world origin
+#  Bin position    : 0.5-0.7 m in front of robot (+X), on table at Z=0.0 m
+#  Place position  : 0.6 m to the side (+Y) of bin
+# =============================================================================
+
+# ── 1. Speed scaling ─────────────────────────────────────────────────────────
+#   Applied globally via ur_robot_driver speed_scaling interface.
+#   main_robot.py:  ARM_MAX_VEL_SCALE=0.10,  ARM_MAX_ACC_SCALE=0.15
+speed_scaling:
+  default_speed_fraction: 0.10      # 10% during bin-picking approach
+  max_speed_fraction:     0.30      # allow up to 30% for transit moves
+  grasp_speed_fraction:   0.05      # 5% during final descent to object
+
+# ── 2. Safety margin on joint position limits ────────────────────────────────
+#   Mirrors ur_description safety_limits=true, safety_pos_margin=0.15
+#   Applied as soft limits by the safety controller in ur_macro.xacro
+safety_controller:
+  enabled:           true
+  pos_margin:        0.15     # rad (~8.6°) buffer inside hard limits
+  k_position:        20       # proportional gain for soft limit spring
+  k_velocity:        0.0      # velocity damping (unused on CB3)
+
+# ── 3. Force / torque safety thresholds ──────────────────────────────────────
+#   Monitored via force_torque_sensor_broadcaster (ft_data topic)
+#   Robot will stop if TCP forces or torques exceed these values.
+force_torque_safety:
+  enabled:              true
+  max_tcp_force_N:      50.0     # N  — contact force during grasp descent
+  max_tcp_torque_Nm:    10.0     # Nm — wrist torque during manipulation
+  contact_force_N:      20.0     # N  — threshold to detect object contact
+  force_check_rate_hz:  100      # Hz — matches controller update_rate
+
+# ── 4. Workspace Cartesian limits (in robot base frame) ──────────────────────
+#   Robot base at world origin. Table surface at Z = 0.0 m.
+#   Bin is placed at X ≈ +0.55 m, Y ≈ 0.0 m.
+#   Place location is +0.60 m in Y from bin (user requirement).
+#
+#   These limits prevent the arm from entering forbidden regions.
+workspace_limits:
+  # Minimum Z: gripper tip + safety margin above table
+  #   table Z=0.0 m, gripper_length=0.18 m, margin=0.02 m
+  min_z:  0.20      # m — lowest the TCP should go (table + gripper + margin)
+  max_z:  1.40      # m — upper limit (ENV camera at 1.34 m)
+
+  # X reach: bin is ~0.55 m, max UR10 reach = 1.3 m
+  min_x: -0.80      # m
+  max_x:  1.20      # m
+
+  # Y reach: bin Y≈0, place Y≈+0.60 m
+  min_y: -0.80      # m
+  max_y:  0.90      # m
+
+  # Forbidden zone: directly below robot base (self-collision risk)
+  forbidden_cylinder_radius: 0.20   # m radius around base Z-axis
+  forbidden_cylinder_height: 0.60   # m height above base
+
+# ── 5. Bin and place locations (world frame) ────────────────────────────────
+#   Loaded from grasp_planning/bin_pose.txt  (joint-space drop-off)
+#   Cartesian approximations for collision scene setup.
+pick_bin:
+  position_xyz: [0.55, 0.0, 0.0]   # m — centre of bin in world frame
+  bin_width:    0.40                # m
+  bin_length:   0.50                # m
+  bin_height:   0.20                # m (wall height for collision avoidance)
+
+place_bin:
+  position_xyz: [0.55, 0.60, 0.0]  # m — 60 cm offset in Y (user requirement)
+  bin_width:    0.40                # m
+  bin_length:   0.50                # m
+  bin_height:   0.20                # m
+
+table:
+  position_xyz:  [0.40, 0.0, -0.03]  # m — table top surface Z = 0.0 m
+  width:          1.50                # m
+  length:         1.20                # m
+  thickness:      0.05                # m
+
+# ── 6. Gripper safety ────────────────────────────────────────────────────────
+#   Values from main_robot.py
+gripper_safety:
+  homing_value:   100       # Schunk WSG open (home)
+  grasp_value:     20       # Schunk WSG close (grasp)
+  open_value:     100       # Schunk WSG open (release)
+  max_force_N:     40.0     # N — maximum gripper closing force
+  finger_length_m:  0.18    # m — physical gripper length
+  max_opening_m:   0.15     # m — max finger separation
+
+# ── 7. Emergency stop configuration ─────────────────────────────────────────
+#   UR CB3 safety_status_bit_0 = e-stop
+#   Monitored via io_and_status_controller
+emergency_stop:
+  monitor_topic:   /io_and_status_controller/robot_program_running
+  estop_topic:     /ur_hardware_interface/set_io
+  auto_recover:    false     # require manual reset after e-stop
+
+# ── 8. Collision detection (DBCC — Depth-Based Collision Check) ──────────────
+#   Applied in grasp planning (utils_gs_cas.py Parameters)
+dbcc:
+  enabled:    true
+  threshold:  0.02    # m — from Parameters.THRESHOLD2 in utils_gs_cas.py
+  datum_z:    0.54    # m — empty bin depth reference

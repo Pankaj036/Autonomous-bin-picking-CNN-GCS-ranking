@@ -1,0 +1,75 @@
+# OAK-D Pro Wide — Wrist Camera
+# MxID : 14442C10715AD4D200  (USB port 3.6)
+# Mount: 15 cm bracket at ft300_output_link, optical axis = gripper Z
+# Topics: /wrist_camera/rgb/image_raw
+#         /wrist_camera/stereo/image_raw
+
+/wrist_camera:
+  ros__parameters:
+    camera:
+      i_mx_id: "14442C10715AD4D200"
+      i_nn_type: none
+      i_pipeline_type: RGBD
+      i_enable_imu: false
+      i_enable_ir: true
+      # Active stereo: IR dot projector at full brightness (0-1200 mA).
+      # Critical for featureless surfaces (cardboard, plain tray floor).
+      i_laser_dot_brightness: 1200
+      # IR flood illumination — small boost for shadow fill near gripper.
+      i_floodlight_brightness: 200
+
+    rgb:
+      i_resolution: '720'
+      i_fps: 30.0
+      i_publish_topic: true
+
+    stereo:
+      # HIGH_ACCURACY: trades some hole coverage for much better sub-mm
+      # precision — best choice at 0.5–1.0 m bin-picking range.
+      i_depth_preset: "HIGH_ACCURACY"
+
+      # Median filter kernel applied on-FPGA before data reaches the CPU.
+      # 7×7 removes salt-and-pepper noise on featureless surfaces.
+      # Values: 0=off  3=3×3  5=5×5  7=7×7
+      i_depth_filter_size: 7
+
+      # Left-Right check: discards "shadow" pixels on object edges.
+      i_lr_check: true
+      i_lrc_threshold: 5        # tighter than default (10) → fewer ghost edges
+
+      # Subpixel disparity: improves accuracy on distant flat surfaces.
+      i_subpixel: true
+
+      # Confidence threshold: 0=keep everything, 255=keep only highest-conf
+      # 200 removes low-confidence flat-surface hits without too many holes.
+      i_stereo_conf_threshold: 200
+
+      # ── On-board post-processing filters (run in hardware order below) ──
+
+      # 1. Speckle filter — removes isolated 1-2 px depth spikes.
+      i_enable_speckle_filter: true
+      i_speckle_filter_speckle_range: 50
+
+      # 2. Spatial filter — edge-preserving hole fill across 2 iterations.
+      i_enable_spatial_filter: true
+      i_spatial_filter_hole_filling_radius: 2
+      i_spatial_filter_alpha: 0.5
+      i_spatial_filter_delta: 20
+      i_spatial_filter_iterations: 2
+
+      # 3. Temporal filter — averages across frames for stable flat surfaces.
+      #    VALID_2_IN_LAST_4: persists a pixel if valid in 2 of last 4 frames.
+      i_enable_temporal_filter: true
+      i_temporal_filter_alpha: 0.4
+      i_temporal_filter_delta: 20
+      i_temporal_filter_persistency: "VALID_2_IN_LAST_4"
+
+      # 4. Threshold filter — hardware clip to tray working range (mm).
+      #    Min 150 mm = 15 cm (closer = robot arm).
+      #    Max 900 mm = 90 cm (further = floor / background).
+      i_enable_threshold_filter: true
+      i_threshold_filter_min_range: 150
+      i_threshold_filter_max_range: 900
+
+      i_fps: 30.0
+      i_publish_topic: true

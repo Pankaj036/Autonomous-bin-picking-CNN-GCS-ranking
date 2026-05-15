@@ -1,0 +1,127 @@
+<?xml version="1.0"?>
+<!--
+  ros2_control hardware description for Robotiq 3-Finger gripper.
+
+  Simulation (Gazebo / fake hardware):
+    - finger_1_joint_1 is the command joint (GripperActionController)
+    - All other joints are mimic joints driven by gazebo_ros2_control
+
+  Physical hardware:
+    - The physical gripper is controlled by the standalone Python driver node
+      (robotiq_3f_gripper_ros2_driver) via Modbus TCP — NOT through ros2_control.
+    - No ros2_control block is emitted for real hardware.  Emitting
+      mock_components here would cause the UR driver's joint_state_broadcaster
+      to publish finger_1_joint_1 = 0.0 at ~50 Hz, overriding the Python
+      driver's real /joint_states at 20 Hz and breaking MoveIt planning.
+    - robot_state_publisher reads /joint_states directly from the Python driver
+      — no ros2_control plugin is needed for that.
+-->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <xacro:macro name="robotiq_3f_gripper_ros2_control"
+               params="name prefix
+                       sim_gazebo:=false
+                       sim_ignition:=false
+                       use_fake_hardware:=false
+                       mock_sensor_commands:=false">
+
+    <!-- Only emit the ros2_control block for simulation / fake-hardware modes.
+         Real hardware: Python driver owns /joint_states for gripper joints. -->
+    <xacro:if value="${sim_gazebo or sim_ignition or use_fake_hardware}">
+
+      <ros2_control name="${name}" type="system">
+
+        <hardware>
+          <xacro:if value="${sim_gazebo}">
+            <plugin>gazebo_ros2_control/GazeboSystem</plugin>
+          </xacro:if>
+          <xacro:if value="${sim_ignition}">
+            <plugin>ign_ros2_control/IgnitionSystem</plugin>
+          </xacro:if>
+          <xacro:if value="${use_fake_hardware}">
+            <plugin>mock_components/GenericSystem</plugin>
+            <param name="mock_sensor_commands">${mock_sensor_commands}</param>
+            <param name="state_following_offset">0.0</param>
+          </xacro:if>
+        </hardware>
+
+        <!-- ── Actuated joint ─────────────────────────────────────── -->
+        <joint name="${prefix}finger_1_joint_1">
+          <command_interface name="position"/>
+          <state_interface name="position">
+            <param name="initial_value">0.0</param>
+          </state_interface>
+          <state_interface name="velocity"/>
+        </joint>
+
+        <!-- ── Mimic joints ───────────────────────────────────────── -->
+        <!-- Finger 1 medial & distal -->
+        <joint name="${prefix}finger_1_joint_2">
+          <param name="mimic">${prefix}finger_1_joint_1</param>
+          <param name="multiplier">0.714</param>
+          <command_interface name="position"/>
+          <state_interface name="position"/>
+          <state_interface name="velocity"/>
+        </joint>
+        <joint name="${prefix}finger_1_joint_3">
+          <param name="mimic">${prefix}finger_1_joint_1</param>
+          <param name="multiplier">0.393</param>
+          <command_interface name="position"/>
+          <state_interface name="position"/>
+          <state_interface name="velocity"/>
+        </joint>
+
+        <!-- Finger 2 all joints -->
+        <joint name="${prefix}finger_2_joint_1">
+          <param name="mimic">${prefix}finger_1_joint_1</param>
+          <param name="multiplier">1.0</param>
+          <command_interface name="position"/>
+          <state_interface name="position"/>
+          <state_interface name="velocity"/>
+        </joint>
+        <joint name="${prefix}finger_2_joint_2">
+          <param name="mimic">${prefix}finger_1_joint_1</param>
+          <param name="multiplier">0.714</param>
+          <command_interface name="position"/>
+          <state_interface name="position"/>
+          <state_interface name="velocity"/>
+        </joint>
+        <joint name="${prefix}finger_2_joint_3">
+          <param name="mimic">${prefix}finger_1_joint_1</param>
+          <param name="multiplier">0.393</param>
+          <command_interface name="position"/>
+          <state_interface name="position"/>
+          <state_interface name="velocity"/>
+        </joint>
+
+        <!-- Finger 3 all joints -->
+        <joint name="${prefix}finger_3_joint_1">
+          <param name="mimic">${prefix}finger_1_joint_1</param>
+          <param name="multiplier">1.0</param>
+          <command_interface name="position"/>
+          <state_interface name="position"/>
+          <state_interface name="velocity"/>
+        </joint>
+        <joint name="${prefix}finger_3_joint_2">
+          <param name="mimic">${prefix}finger_1_joint_1</param>
+          <param name="multiplier">0.714</param>
+          <command_interface name="position"/>
+          <state_interface name="position"/>
+          <state_interface name="velocity"/>
+        </joint>
+        <joint name="${prefix}finger_3_joint_3">
+          <param name="mimic">${prefix}finger_1_joint_1</param>
+          <param name="multiplier">0.393</param>
+          <command_interface name="position"/>
+          <state_interface name="position"/>
+          <state_interface name="velocity"/>
+        </joint>
+
+      </ros2_control>
+
+    </xacro:if>
+    <!-- Real hardware: no ros2_control block — Python driver publishes /joint_states -->
+
+  </xacro:macro>
+
+</robot>

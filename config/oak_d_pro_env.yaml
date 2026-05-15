@@ -1,0 +1,25 @@
+# OAK-D Pro AF — Environment Camera
+# MxID : 14442C1041A6D1D200  (USB port 3.5)
+# Topics: /env_camera/rgb/image_raw
+#         /env_camera/stereo/image_raw
+#         /env_camera/imu   (BNO086)
+
+/env_camera:
+  ros__parameters:
+    camera:
+      i_mx_id: "14442C1041A6D1D200"
+      i_nn_type: none
+      i_pipeline_type: RGBD
+      i_enable_imu: true
+      i_enable_ir: true
+
+    rgb:
+      i_resolution: '1080'
+      i_fps: 15.0
+      i_publish_topic: true
+
+    stereo:
+      i_subpixel: true
+      i_lr_check: true
+      i_fps: 15.0
+      i_publish_topic: true

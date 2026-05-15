@@ -1,0 +1,10 @@
+env_cam:
+  ros__parameters:
+    camera:
+      i_mx_id: "14442C1041A6D1D200"
+      i_nn_type: "none"
+    rgb:
+      i_resolution: "480"
+      i_fps: 10.0
+      i_width: 640
+      i_height: 480
