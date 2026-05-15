@@ -1,1 +1,1 @@
-# Autonomous-bin-picking-
+# Autonomous-bin-picking-CNN-GCS ranking
